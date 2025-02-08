@@ -36,7 +36,7 @@ components:
     - name: HOME
       value: "/projects/home"
     - name: VSCODE_DEFAULT_WORKSPACE
-      value: "/projects/my-little-code-assistant-workspace/my-little-code-assistant.code-workspace"
+      value: "/projects/my-little-code-assistant/my-little-code-assistant.code-workspace"
     - name: GOPATH
       value: /projects/home/go
 - volume:
