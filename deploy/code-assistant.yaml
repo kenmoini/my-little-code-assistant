@@ -1,0 +1,121 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: llama-cpp-code-assistant
+spec:
+  clusterIP: None
+  ipFamilies:
+    - IPv4
+  ports:
+    - name: http
+      protocol: TCP
+      port: 11434
+      targetPort: http
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+  selector:
+    app: llama-cpp-code-assistant
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: llama-cpp-code-assistant
+spec:
+  to:
+    kind: Service
+    name: llama-cpp-code-assistant
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+  wildcardPolicy: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llama-cpp-code-assistant-cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  volumeMode: Filesystem
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-cpp-code-assistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llama-cpp-code-assistant
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: llama-cpp-code-assistant
+    spec:
+      metadata:
+        annotations:
+          io.kubernetes.cri-o.Devices: "/dev/dri/renderD128"
+      containers:
+      - name: llama-cpp-code-assistant
+        image: quay.io/cgruver0/che/my-code-assistant:latest
+        imagePullPolicy: Always
+        env:
+        - name: MODEL
+          value: granite-code:3b
+        - name: RAMALAMA_STORE
+          value: /ramalama
+        securityContext:
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        resources:
+          limits:
+            cpu: '16'
+            memory: 24Gi
+          requests:
+            cpu: '1'
+            memory: 2Gi
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+            scheme: HTTP
+          timeoutSeconds: 5
+          periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+            scheme: HTTP
+          timeoutSeconds: 8
+          periodSeconds: 100
+          successThreshold: 1
+          failureThreshold: 3
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /ramalama
+          name: llama-cpp-code-assistant-cache
+      restartPolicy: Always
+      volumes:
+      - name: llama-cpp-code-assistant-cache
+        persistentVolumeClaim:
+          claimName: llama-cpp-code-assistant-cache

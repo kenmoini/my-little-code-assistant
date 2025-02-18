@@ -18,29 +18,14 @@ then
   then
     echo "${USER_NAME:-llama-user}:x:$(id -u):0:${USER_NAME:-llama-user} user:${HOME}:/bin/bash" >> /etc/passwd
     echo "${USER_NAME:-llama-user}:x:$(id -u):" >> /etc/group
-    render_group="$(cat /etc/group | grep 'render:x')"
-    video_group="$(cat /etc/group | grep 'video:x')"
-    render_group_new="${render_group}${USER_NAME:-llama-user}"
-    video_group_new="${video_group}${USER_NAME:-llama-user}"
-    sed "s|${render_group}|${render_group_new}|g" /etc/group > /tmp/group
-    cat /tmp/group > /etc/group
-    sed "s|${video_group}|${video_group_new}|g" /etc/group > /tmp/group
-    cat /tmp/group > /etc/group
   fi
 fi
 
-# Configure Z shell
-if [ ! -f ${HOME}/.zshrc ]
+if [ ! -f ${RAMALAMA_STORE}/models/ollama/${MODEL} ]
 then
-  (echo "source /opt/intel/oneapi/setvars.sh") > ${HOME}/.zshrc
-fi
-
-# Configure Bash shell
-if [ ! -f ${HOME}/.bashrc ]
-then
-  (echo "source /opt/intel/oneapi/setvars.sh") > ${HOME}/.bashrc
+  ramalama pull ${MODEL}
 fi
 
 source /opt/intel/oneapi/setvars.sh
 
-exec "$@"
+llama-server --model ${RAMALAMA_STORE}/models/ollama/${MODEL} --host 0.0.0.0 --n-gpu-layers 999 --flash-attn --ctx-size 32768
