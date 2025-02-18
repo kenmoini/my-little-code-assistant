@@ -40,7 +40,7 @@ components:
     - name: GOPATH
       value: /projects/home/go
 - volume:
-    size: 20Gi
+    size: 50Gi
   name: projects
 - name: prep-workspace
   container:
