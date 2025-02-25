@@ -1,7 +1,13 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: code-assistant
+---
 kind: Service
 apiVersion: v1
 metadata:
   name: llama-cpp-code-assistant
+  namespace: code-assistant
 spec:
   clusterIP: None
   ipFamilies:
@@ -21,6 +27,7 @@ kind: Route
 apiVersion: route.openshift.io/v1
 metadata:
   name: llama-cpp-code-assistant
+  namespace: code-assistant
 spec:
   to:
     kind: Service
@@ -36,18 +43,20 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: llama-cpp-code-assistant-cache
+  namespace: code-assistant
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 20Gi
+      storage: 50Gi
   volumeMode: Filesystem
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: llama-cpp-code-assistant
+  namespace: code-assistant
 spec:
   replicas: 1
   selector:
@@ -59,27 +68,36 @@ spec:
     metadata:
       labels:
         app: llama-cpp-code-assistant
+      annotations:
+        io.kubernetes.cri-o.Devices: "/dev/dri/renderD128"
     spec:
-      metadata:
-        annotations:
-          io.kubernetes.cri-o.Devices: "/dev/dri/renderD128"
+      hostUsers: false
+      procMount: unmasked
       containers:
       - name: llama-cpp-code-assistant
         image: quay.io/cgruver0/che/my-code-assistant:latest
         imagePullPolicy: Always
         env:
         - name: MODEL
-          value: granite-code:3b
+          value: granite3.1-moe:3b
         - name: RAMALAMA_STORE
           value: /ramalama
-        securityContext:
-            capabilities:
-              drop:
-                - ALL
-            runAsNonRoot: true
-            allowPrivilegeEscalation: false
-            seccompProfile:
-              type: RuntimeDefault
+        - name: LLAMA_CPP_CTX
+          value: "131072"
+        - name: LLAMA_CPP_GPU
+          value: SYCL0
+        command:
+          - '/entrypoint.sh'
+        args:
+          - 'llama-server'
+          - '--jinja'
+          - '--model $(RAMALAMA_STORE)/models/ollama/$(MODEL)'
+          - '--host 0.0.0.0' 
+          - '--n-gpu-layers 999' 
+          - '--flash-attn' 
+          - '--ctx-size $(LLAMA_CPP_CTX)'
+          - '--device $(LLAMA_CPP_GPU)'
+          - '--verbose'
         ports:
         - name: http
           containerPort: 8080

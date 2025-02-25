@@ -23,9 +23,9 @@ fi
 
 if [ ! -f ${RAMALAMA_STORE}/models/ollama/${MODEL} ]
 then
-  ramalama pull ${MODEL}
+  ramalama pull ollama://${MODEL}
 fi
 
 source /opt/intel/oneapi/setvars.sh
 
-llama-server --model ${RAMALAMA_STORE}/models/ollama/${MODEL} --host 0.0.0.0 --n-gpu-layers 999 --flash-attn --ctx-size 32768
+exec "$@"
