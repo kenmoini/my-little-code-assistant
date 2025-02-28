@@ -17,7 +17,8 @@ components:
     pod-overrides:
       metadata:
         annotations:
-          io.kubernetes.cri-o.Devices: "/dev/fuse,/dev/net/tun,/dev/dri/renderD128"
+          #io.kubernetes.cri-o.Devices: "/dev/fuse,/dev/net/tun,/dev/dri/renderD128"
+          io.kubernetes.cri-o.Devices: "/dev/fuse,/dev/net/tun"
       spec:
         hostUsers: false
     container-overrides: 
