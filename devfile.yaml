@@ -18,7 +18,8 @@ components:
       metadata:
         annotations:
           #io.kubernetes.cri-o.Devices: "/dev/fuse,/dev/net/tun,/dev/dri/renderD128"
-          io.kubernetes.cri-o.Devices: "/dev/fuse,/dev/net/tun"
+          #io.kubernetes.cri-o.Devices: "/dev/fuse,/dev/net/tun"
+          foo: bar
       spec:
         hostUsers: false
     container-overrides: 
